@@ -155,4 +155,28 @@ class simpleGame:
     def betting(self):
         pass
     def payWinner(self):
+        #for pp in 
         pass
+
+def main():
+    g=simpleGame()
+    g.play()
+    ranks=[]
+    for pp in g.players:
+        pp.state.hand=hand(g.table+pp.state.cards)
+        ranks.append(pp.state.hand.rank)
+    print(ranks)
+    winners=[]
+    best=min(ranks)
+    for idx,rr in enumerate(ranks):
+        if rr==best:
+            winners.append(idx)
+    for cc in g.table:
+        print(cc)
+    for ww in winners:
+        print(g.players[ww].state.hand.hand)
+        for cc in g.players[ww].state.cards:
+            print(cc)
+
+if __name__=="__main__":
+    main()
