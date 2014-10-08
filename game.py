@@ -15,6 +15,7 @@ class simpleState:
         self.actions=[0]
         self.cards=[]
         self.table=None
+        self.balance=100
     def add(self,card):
         self.cards.append(card)
 
@@ -43,7 +44,7 @@ class hand:
         self.highCard=max(self.nums)
         self.rank=-1
         if self.suitsCount.most_common(1)[0][1]>4:
-            suitnums=[x.num for x in cards if x.suit==self.suitsCount.most_common(1)[0][0]]
+            suitnums=[x.num-x.suit*13 for x in cards if x.suit==self.suitsCount.most_common(1)[0][0]]
             st=self.isStraight(suitnums)
             if st>-1:
                 self.hand='Straight Flush'#10 perms
@@ -127,10 +128,18 @@ class simpleGame:
         self.state=simpleState()
         self.deck=deck()
     def play(self):
+        self.blinds()
         self.preflop()
+        self.betting()
         self.flop()
+        self.betting()
         self.turn()
+        self.betting()
         self.river()
+        self.betting()
+        self.payWinner()
+    def blinds(self):
+        pass
     def preflop(self):
         self.table=[]
         for pl in self.players:
@@ -143,3 +152,7 @@ class simpleGame:
         self.table.append(self.deck.draw())
     def river(self):
         self.table.append(self.deck.draw())
+    def betting(self):
+        pass
+    def payWinner(self):
+        pass
