@@ -40,8 +40,8 @@ class selectActor(dumbActor):
                 return maxbet-self.state.inround
         if self.state.cards[0].card==self.state.cards[1].card:
             return maxbet-self.state.inround
-        if self.state.cards[0].suit==self.state.cards[1].suit:
-            return maxbet-self.state.inround
+        #if self.state.cards[0].suit==self.state.cards[1].suit:
+        #    return maxbet-self.state.inround
         return 0
 
 class humanActor(dumbActor):
@@ -65,53 +65,78 @@ class humanActor(dumbActor):
         print("Won:%f"%(amnt,))
 
 class qActor(dumbActor):
-    def __init__(self,balance=100):
+    def __init__(self,balance=100,tc=3):
         super().__init__(balance)
+        self.tc=tc
         self.Q=[]
         self.state.record=[]
+        n=1
+        for i in range(tc+2):
+            n+=13**(i+1)
         for i in range(2):
-            Qs=[]
-            rec=[]
-            for j in cards:
-                [Qs.append(random.random()) for k in cards]
-                [rec.append(0) for k in cards]
+            Qs=[0]
+            rec=[0]
+            [Qs.append(random.random()) for k in range(n)]
+            [rec.append(0) for k in range(n)]
             self.Q.append(Qs)
             self.state.record.append(rec)
-        self.epsilon=0.2
-        self.alpha=0.001
-        self.gamma=0
+        self.epsilon=0.1
+        self.alpha=0.1
+        self.gamma=0.95
         self.state.r=None
     def bet(self,maxbet):
-        s=self.state.cards[0].card*13+self.state.cards[1].card
-        qbet=self.Q[1][s]
+        s=0
+        mult=0
+        for cc in self.state.cards+self.state.table[:self.tc]:
+            s+=(1+cc.card)*(13**mult)
+            mult+=1
+        #qraise=self.Q[2][s]
+        qcall=self.Q[1][s]
         qfold=self.Q[0][s]
+        #if qraise>qcall and qraise>qfold:
+        #    greedyact=2
+        #    explore1=1
+        #    explore2=0
+        if qcall>qfold:
+            greedyact=1
+        #    explore1=2
+            explore2=0
+        else:
+            greedyact=0
+        #    explore1=2
+            explore2=1
         rr=random.random()
-        if qbet>qfold:
-            dec=1-self.epsilon
-        elif qbet<qfold:
-            dec=self.epsilon
+        if rr<(1-self.epsilon):
+            a=greedyact
+        #elif rr>(1-self.epsilon/2):
+        #    a=explore1
         else:
-            dec=0.5
-        if rr>dec:
-            a=0
-        else:
-            a=1
+            a=explore2
         if self.state.r is not None:
             #if self.Q[a][s]==1337:
             #    self.Q[a][s]=self.state.r
             #else:
-            self.Q[self.state.action][self.state.state]+=self.alpha*(self.state.r+self.gamma*self.Q[a][s]-self.Q[self.state.action][self.state.state])
+            self.Q[self.state.action][self.state.state]+=self.alpha*(self.gamma*max([self.Q[0][s],self.Q[1][s]])-self.Q[self.state.action][self.state.state])
         self.state.state=s
         if a==0:
             self.state.action=0
             return 0
-        else:
+        elif a==1:
             self.state.action=1
             return maxbet-self.state.inround
+        #else:
+        #    self.state.action=2
+        #    return maxbet-self.state.inround+1
     def pay(self,amnt):
         super().pay(amnt)
         self.state.record[self.state.action][self.state.state]+=amnt-self.state.inround
-        self.state.r=amnt-self.state.inround
+        r=amnt-self.state.inround
+        self.Q[self.state.action][self.state.state]+=self.alpha*(r+self.gamma*self.Q[0][0]-self.Q[self.state.action][self.state.state])
+        self.state.action=0
+        self.state.state=0
+        self.state.r=0
+    def __str__(self):
+        return "qActor with tc=%d" %(self.tc,)
 
 cards=[str(x+2) for x in range(9)]
 cards+=['Jack','Queen','King','Ace']
@@ -221,7 +246,7 @@ class simpleGame:
             pass
         else:
             pass
-        self.origplayers=[selectActor() for _i in range(7)]+[humanActor()]
+        self.origplayers=[dumbActor() for _i in range(6)]+[qActor(),qActor()]#(tc=0)]
         self.players=deque(self.origplayers)
         #self.state=simpleState()
         self.deck=deck()
@@ -237,11 +262,11 @@ class simpleGame:
         self.preflop()
         self.betting()
         self.flop()
-        self.betting()
+        #self.betting()
         self.turn()
-        self.betting()
+        #self.betting()
         self.river()
-        self.betting()
+        #self.betting()
         self.payWinner()
     def blinds(self):
         self.players.rotate(1)
@@ -254,7 +279,7 @@ class simpleGame:
         self.players[self.bb].state.inround+=self.bbv
         self.pot+=self.bbv
         self.maxbet=self.bbv
-        self.raiser=self.players[self.bb]
+        self.raiser=None
     def preflop(self):
         self.table=cardlist()
         self.roundplayers=[]
@@ -263,6 +288,13 @@ class simpleGame:
                 pl.state.add(self.deck.draw())
             pl.state.table=self.table
             self.roundplayers.append(pl)
+    def flop(self):
+        self.table+=[self.deck.draw() for i in range(3)]
+    def turn(self):
+        self.table.append(self.deck.draw())
+    def river(self):
+        self.table.append(self.deck.draw())
+    def betting(self):
         maxbet=0
         while maxbet!=self.maxbet:
             maxbet=self.maxbet
@@ -279,15 +311,7 @@ class simpleGame:
                     self.raiser=pl
                 elif pl.state.inround<self.maxbet:
                     self.roundplayers.remove(pl)
-        print(self.roundplayers)
-    def flop(self):
-        self.table+=[self.deck.draw() for i in range(3)]
-    def turn(self):
-        self.table.append(self.deck.draw())
-    def river(self):
-        self.table.append(self.deck.draw())
-    def betting(self):
-        pass
+        self.raiser=None
     def payWinner(self):
         ranks=[]
         for pp in self.roundplayers:
@@ -299,14 +323,11 @@ class simpleGame:
             if rr==best:
                 winners.append(pp)
         val=self.pot
-        print("----")
         for idx,pp in enumerate(self.players):
-            print(idx,pp)
             if pp in winners:
                 pp.pay(self.pot/len(winners))
             else:
                 pp.pay(0)
-        print("====")
         for pl in self.players:
             pl.state.clear()
         self.pot=0
@@ -315,8 +336,12 @@ def main():
     g=simpleGame()
     for i in range(100000):
         g.play()
+        if i%1000==0:
+            print(i)
+            for pl in g.players:
+                print(pl,pl.state.balance)
     for pl in g.players:
-        print(pl.state.balance)
+        print(pl,pl.state.balance)
     return g
 
 if __name__=="__main__":
