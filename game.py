@@ -64,6 +64,57 @@ class humanActor(dumbActor):
         print(self.state.hand.hand)
         print("Won:%f"%(amnt,))
 
+class nnActor(dumbActor):
+    def __init__(self,balance=100):
+        import net
+        super().__init__(balance)
+        self.nn=net.network(n_neurons=[2,80,20,20,20,2])
+        self.gamma=0.95
+        self.epsilon=0.2
+        self.state.state=[0,0]
+    def bet(self,maxbet):
+        s=[]
+        for cc in self.state.cards:
+            s.append((cc.card+1)/14)
+        ac=self.nn.evaluate(s)
+        qcall=ac[0]
+        qfold=ac[1]
+        if qcall>qfold:
+            greedyact=0
+            explore1=1
+        else:
+            greedyact=1
+            explore1=0
+        rr=random.random()
+        if rr<(1-self.epsilon):
+            a=greedyact
+        else:
+            a=explore1
+        self.nn.evaluate(self.state.state)
+        if a==0:
+            self.nn.backprop([self.gamma*max(ac),None])
+        else:
+            self.nn.backprop([None,self.gamma*max(ac)])
+        self.state.state=s
+        if a==0:
+            self.state.action=0
+            return 0
+        elif a==1:
+            self.state.action=1
+            return maxbet-self.state.inround
+    def pay(self,amnt):
+        super().pay(amnt)
+        r=amnt-self.state.inround
+        self.nn.evaluate(self.state.state)
+        if self.state.action==0:
+            self.nn.backprop([r,None])
+        else:
+            self.nn.backprop([None,r])
+        self.state.action=0
+        self.state.state=[0,0]
+    def __str__(self):
+        return "nnActor"# with tc=%d" %(self.tc,)
+
 class qActor(dumbActor):
     def __init__(self,balance=100,tc=3):
         super().__init__(balance)
