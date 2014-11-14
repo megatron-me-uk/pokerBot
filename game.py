@@ -80,14 +80,14 @@ class nnActor(dumbActor):
         for cc in self.state.cards:
             s.append((cc.card+1)/14)
         ac=self.nn.evaluate(s)
-        qcall=ac[0]
-        qfold=ac[1]
+        qcall=ac[1]
+        qfold=ac[0]
         if qcall>qfold:
-            greedyact=0
-            explore1=1
-        else:
             greedyact=1
             explore1=0
+        else:
+            greedyact=0
+            explore1=1
         rr=random.random()
         if rr<(1-self.epsilon):
             a=greedyact
