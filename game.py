@@ -128,8 +128,8 @@ class qActor(dumbActor):
         for i in range(tc+2):
             n+=13**(i+1)
         for i in range(2):
-            Qs=[0]
-            rec=[0]
+            Qs=[]
+            rec=[]
             [Qs.append(random.random()) for k in range(n)]
             [rec.append(0) for k in range(n)]
             self.Q.append(Qs)
