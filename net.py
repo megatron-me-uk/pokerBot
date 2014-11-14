@@ -50,9 +50,9 @@ class output_neuron(neuron):
         return self.output
 
 class network:
-    def __init__(self,n_neurons=[2,80,20,20,20,2],alpha=0.05):
+    def __init__(self,n_neurons=[2,80,20,20,20,2],alpha=0.005):
         self.alpha=alpha
-        self.momentum=0.9
+        self.momentum=0.45
         self.input_layer=[input_neuron() for i in range(n_neurons[0])]
         input_layer=self.input_layer
         self.layers=[]
@@ -142,20 +142,20 @@ def main():
         y=random.random()
         test.append([x,y])
         o=a.evaluate([x,y])
-        orig_err+=((1-x)*x*y*2-o[0])**2+((1-x)*x*(1-y)*2-o[1])**2
+        orig_err+=((1-x)*x*y*20-o[0])**2+((1-x)*x*(1-y)*20-o[1])**2
     print(orig_err)
     for j in range(200):
         for i in range(1000):
             x=random.random()
             y=random.random()
             o=a.evaluate([x,y])
-            a.backprop([(1-x)*x*y*2,(1-x)*x*(1-y)*2])
+            a.backprop([(1-x)*x*y*20,(1-x)*x*(1-y)*20])
         err=0
         for i in test:
             x=i[0]
             y=i[1]
             o=a.evaluate([x,y])
-            err+=((1-x)*x*y*2-o[0])**2+((1-x)*x*(1-y)*2-o[1])**2
+            err+=((1-x)*x*y*20-o[0])**2+((1-x)*x*(1-y)*20-o[1])**2
         print(err)
     return a
 

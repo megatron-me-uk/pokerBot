@@ -71,8 +71,8 @@ class nnActor(dumbActor):
     def __init__(self,balance=100):
         import net
         super().__init__(balance)
-        self.nn=net.network(n_neurons=[2,80,20,20,20,2])
-        self.gamma=0.95
+        self.nn=net.network(n_neurons=[2,20,20,2])
+        self.gamma=0.0
         self.epsilon=0.2
         self.state.state=[0,0]
     def bet(self,maxbet):
@@ -107,7 +107,7 @@ class nnActor(dumbActor):
             return maxbet-self.state.inround
     def pay(self,amnt):
         super().pay(amnt)
-        r=amnt-self.state.inround
+        r=(amnt-self.state.inround)/10
         self.nn.evaluate(self.state.state)
         if self.state.action==0:
             self.nn.backprop([r,None])
@@ -134,9 +134,9 @@ class qActor(dumbActor):
             [rec.append(0) for k in range(n)]
             self.Q.append(Qs)
             self.state.record.append(rec)
-        self.epsilon=0.1
+        self.epsilon=0.2
         self.alpha=0.1
-        self.gamma=0.95
+        self.gamma=0.0
         self.state.r=None
     def bet(self,maxbet):
         s=0
