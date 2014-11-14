@@ -120,6 +120,16 @@ class network:
             change=self.alpha*delta_total+self.momentum*self.lastchange[k]
             self.weights[k]=v-change
             self.lastchange[k]=change
+    def eq(self,other):
+        if len(self.input_layer)!=len(other.input_layer):
+            return False
+        if len(self.layers[-1])!=len(other.layers[-1]):
+            return False
+        err=0
+        for i in range(1000):
+            inp=[random.random() for j in self.input_layer]
+            err+=sum([(s-o)**2 for s,o in zip(self.evaluate(inp),other.evaluate(inp))])
+        return exp(-err)
 
 a=None
 def main():
@@ -205,5 +215,32 @@ def main2():
         print(mu_reward)
     return a
 
+def main3(nn=[1,1,1]):
+    global a
+    a=network(n_neurons=nn)
+    b=network(n_neurons=nn)
+    from copy import deepcopy
+    c=deepcopy(a)
+    #def fn(input):
+    #    return 1.0/(1.0+exp((0.5-input)/3.0))
+    a.fn=b
+    c.fn=b
+    error=0.0
+    error2=0.0
+    for i in range(10000):
+        input=[random.random() for n in a.input_layer]
+        val=a.fn.evaluate(input)
+        output=a.evaluate(input)
+        a.backprop(val)
+        output2=c.evaluate(input)
+        c.backprop_numerical(val)
+        error*=0.99
+        error+=0.01*sum([(o-v)**2 for o,v in zip(output,val)])
+        error2*=0.99
+        error2+=0.01*sum([(o-v)**2 for o,v in zip(output2,val)])
+        if i%50==0:
+            print(error,error2,output[0],val[0],a.eq(a.fn),a.eq(c))
+    return a
+
 if __name__=="__main__":
-    a=main2()
+    a=main3()
