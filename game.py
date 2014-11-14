@@ -16,12 +16,15 @@ class simpleState:
         self.cards=cardlist()
         self.table=None
         self.balance=balance
+        self.min_balance=balance
         self.hand=NoHand()
     def add(self,card):
         self.cards.append(card)
     def clear(self):
         self.cards=cardlist()
         self.hand=NoHand()
+        if self.min_balance>self.balance:
+            self.min_balance=self.balance
 
 class dumbActor:
     def __init__(self,balance=100):
