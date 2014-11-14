@@ -1,11 +1,9 @@
-from math import exp
+from math import exp,tanh
 import random
 
 class neuron:
     def __init__(self,children,weights):
         self.weights=weights
-        self.center=random.random()
-        self.width=(random.random()+0.01)*2
         self.output=None
         self.output_derivative=None
         for i in children:
@@ -13,14 +11,9 @@ class neuron:
         self.in_neurons=children
         self.out_neurons=None
     def activation(self):
-        #self.output=1.0/(1+exp(-self.inputs()))
         #self.output_derivative=self.output*(1-self.output)
-        try:
-            self.output=1.0/(1+exp(self.center-self.inputs()/self.width))
-        except OverflowError:
-            self.output=0.0
-        self.output_derivative=self.output*(1-self.output)/self.width
-        self.output-=0.5
+        self.output=tanh(self.inputs())
+        self.output_derivative=1.0-(self.output**2)
         return self.output
     def inputs(self):
         inp=0
@@ -44,6 +37,12 @@ class input_neuron:
     def activation(self,input):
         self.output=input
 
+class bias_neuron:
+    def __init__(self):
+        self.output=1
+    def activation(self,input):
+        return self.output
+
 class output_neuron(neuron):
     def activation(self):
         self.output=self.inputs()
@@ -59,15 +58,16 @@ class network:
         self.layers=[]
         self.weights=dict()
         self.lastchange=dict()
+        bias=bias_neuron()
         for n in n_neurons[1:-1]:
             layer=[]
             for j in range(n):
-                layer.append(neuron(input_layer,self.weights))
+                layer.append(neuron(input_layer+[bias],self.weights))
             self.layers.append(layer)
             input_layer=layer
         layer=[]
         for j in range(n_neurons[-1]):
-            layer.append(output_neuron(input_layer,self.weights))
+            layer.append(output_neuron(input_layer+[bias],self.weights))
         self.layers.append(layer)
         for l,k in zip(self.layers[:-1],self.layers[1:]):
             for n in l:
