@@ -132,6 +132,19 @@ class network:
             err+=sum([(s-o)**2 for s,o in zip(self.evaluate(inp),other.evaluate(inp))])
         return exp(-err)
 
+def eChoice(values,actions,epsilon=0.4):
+    p=[]
+    for v in values:
+        p+=[epsilon/len(values)]
+        if v==max(values):
+            p[-1]+=1-epsilon
+    rr=random.random()
+    cu=0
+    for pp,a in zip(p,actions):
+        cu+=pp
+        if cu>rr:
+            return a
+
 a=None
 def main():
     global a
@@ -214,6 +227,42 @@ def main2():
         mu_reward*=0.99
         mu_reward+=alpha*ep_reward
         print(mu_reward)
+    return a
+
+def mainGrid():
+    global a
+    a=network(n_neurons=[2,20,20,4])
+    import gridWorld
+    w=gridWorld.grid()
+    a.w=w
+    max_state=max(w.states)
+    mu_reward=0
+    alpha=0.01
+    gamma=0.95
+    for ep in range(100000):
+        ep_reward=0
+        state=(0,0)#random.choice(w.states)
+        i=0
+        while state is not None and i<1000:
+            action=a.evaluate([s/m for s,m in zip(state,max_state)])
+            action=eChoice(action,['l','r','u','d'])
+            (new_state,reward)=w.transition(state,action)
+            if ep%1000==0:
+                print(state,action,reward,new_state)
+            ep_reward+=reward
+            if new_state is None:
+                R=[reward/100 if action==aa else None for aa in ['l','r','u','d']]
+                a.backprop(R)
+            else:
+                vals=a.evaluate([n/m for n,m in zip(new_state,max_state)])
+                a.evaluate([s/m for s,m in zip(state,max_state)])
+                R=[reward/100+gamma*max(vals) if action==aa else None for aa in ['l','r','u','d']]
+                a.backprop(R)
+            state=new_state
+            i+=1
+        mu_reward*=0.99
+        mu_reward+=alpha*ep_reward
+        print(mu_reward,i)
     return a
 
 def main3(nn=[1,1,1]):
