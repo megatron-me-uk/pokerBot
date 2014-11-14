@@ -58,6 +58,7 @@ class network:
         self.layers=[]
         self.weights=dict()
         self.lastchange=dict()
+        self.EPS=1e-4
         bias=bias_neuron()
         for n in n_neurons[1:-1]:
             layer=[]
@@ -81,6 +82,11 @@ class network:
             for n in l:
                 n.activation()
         return [x.output for x in self.layers[-1]]
+    def reevaluate(self):
+        for l in self.layers:
+            for n in l:
+                n.activation()
+        return [x.output for x in self.layers[-1]]
     def backprop(self,train_vals):
         out_layer=1
         for l in self.layers[::-1]:
@@ -97,6 +103,22 @@ class network:
         for k,v in self.weights.items():
             change=self.alpha*k[0].delta*k[1].output+self.momentum*self.lastchange[k]
             self.weights[k]-=change
+            self.lastchange[k]=change
+    def backprop_numerical(self,train_vals):
+        o0=self.reevaluate()
+        err=[x0-t for x0,t in zip(o0,train_vals)]
+        for k,v in self.weights.items():
+            self.weights[k]=v-self.EPS
+            o1=self.reevaluate()
+            self.weights[k]=v+self.EPS
+            o2=self.reevaluate()
+            delta=[]
+            delta=[(x2-x1)/(2*self.EPS) for x1,x2 in zip(o1,o2)]
+            delta_total=0
+            for e,d in zip(err,delta):
+                delta_total+=e*d
+            change=self.alpha*delta_total+self.momentum*self.lastchange[k]
+            self.weights[k]=v-change
             self.lastchange[k]=change
 
 a=None
