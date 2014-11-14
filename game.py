@@ -300,7 +300,7 @@ class simpleGame:
             pass
         else:
             pass
-        self.origplayers=[dumbActor() for _i in range(6)]+[qActor(),qActor()]#(tc=0)]
+        self.origplayers=[dumbActor() for _i in range(6)]+[qActor(tc=0),nnActor()]
         self.players=deque(self.origplayers)
         #self.state=simpleState()
         self.deck=deck()
@@ -386,16 +386,22 @@ class simpleGame:
             pl.state.clear()
         self.pot=0
 
+g=None
 def main():
-    g=simpleGame()
-    for i in range(100000):
-        g.play()
-        if i%1000==0:
-            print(i)
-            for pl in g.players:
+    global g
+    g=[]
+    for i in range(10):
+        g.append(simpleGame())
+        for i in range(10000000):
+            g[-1].play()
+            if (i+1)%50000==0:
+                print(i)
+                for pl in g[-1].players:
+                    if type(pl) != dumbActor:
+                        print(pl,pl.state.balance)
+        for pl in g[-1].players:
+            if type(pl) != dumbActor:
                 print(pl,pl.state.balance)
-    for pl in g.players:
-        print(pl,pl.state.balance)
     return g
 
 if __name__=="__main__":
