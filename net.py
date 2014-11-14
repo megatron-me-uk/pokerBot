@@ -53,6 +53,7 @@ class network:
     def __init__(self,n_neurons=[2,80,20,20,20,2],alpha=0.005):
         self.alpha=alpha
         self.momentum=0.45
+        self.shape=n_neurons+[]
         self.input_layer=[input_neuron() for i in range(n_neurons[0])]
         input_layer=self.input_layer
         self.layers=[]
