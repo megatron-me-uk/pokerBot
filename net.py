@@ -6,13 +6,17 @@ class neuron:
         self.weights=weights
         self.output=None
         self.output_derivative=None
+        self.output_previous=None
+        self.output_derivative_previous=None
         for i in children:
             self.weights[self,i]=random.random()*2-1
         self.in_neurons=children
         self.out_neurons=None
     def activation(self):
         #self.output_derivative=self.output*(1-self.output)
+        self.output_previous=self.output
         self.output=tanh(self.inputs())
+        self.output_derivative_previous=self.output_derivative
         self.output_derivative=1.0-(self.output**2)
         return self.output
     def inputs(self):
@@ -30,22 +34,32 @@ class neuron:
         for o in self.out_neurons:
             out+=o.delta*self.weights[o,self]
         return out
+    def calc_delta_previous(self,train_val):
+        if train_val==None:
+            self.delta=self.outputs()*self.output_derivative_previous
+        else:
+            self.delta=(self.output_previous-train_val)*self.output_derivative_previous
 
 class input_neuron:
     def __init__(self):
         self.output=None
+        self.output_previous=None
     def activation(self,input):
+        self.output_previous=self.output
         self.output=input
 
 class bias_neuron:
     def __init__(self):
         self.output=1
+        self.output_previous=1
     def activation(self,input):
         return self.output
 
 class output_neuron(neuron):
     def activation(self):
+        self.output_previous=self.output
         self.output=self.inputs()
+        self.output_derivative_previous=1
         self.output_derivative=1
         return self.output
 
@@ -103,6 +117,23 @@ class network:
             out_layer=0
         for k,v in self.weights.items():
             change=self.alpha*k[0].delta*k[1].output+self.momentum*self.lastchange[k]
+            self.weights[k]-=change
+            self.lastchange[k]=change
+    def backprop_previous(self,train_vals):
+        out_layer=1
+        for l in self.layers[::-1]:
+            if out_layer:
+                for n,tv in zip(l,train_vals):
+                    if tv is not None:
+                        n.calc_delta_previous(tv)
+                    else:
+                        n.delta=0
+            else:
+                for n in l:
+                    n.calc_delta_previous(None)
+            out_layer=0
+        for k,v in self.weights.items():
+            change=self.alpha*k[0].delta*k[1].output_previous+self.momentum*self.lastchange[k]
             self.weights[k]-=change
             self.lastchange[k]=change
     def backprop_numerical(self,train_vals):
@@ -217,11 +248,10 @@ def main2():
                     a.backprop([None,reward/10])
             else:
                 vals=a.evaluate([new_state/max_state])
-                a.evaluate([state/max_state])
                 if action=='l':
-                    a.backprop([reward/10+gamma*max(vals),None])
+                    a.backprop_previous([reward/10+gamma*max(vals),None])
                 else:
-                    a.backprop([None,reward/10+gamma*max(vals)])
+                    a.backprop_previous([None,reward/10+gamma*max(vals)])
             state=new_state
             i+=1
         mu_reward*=0.99
@@ -255,9 +285,8 @@ def mainGrid():
                 a.backprop(R)
             else:
                 vals=a.evaluate([n/m for n,m in zip(new_state,max_state)])
-                a.evaluate([s/m for s,m in zip(state,max_state)])
                 R=[reward/100+gamma*max(vals) if action==aa else None for aa in ['l','r','u','d']]
-                a.backprop(R)
+                a.backprop_previous(R)
             state=new_state
             i+=1
         mu_reward*=0.99
