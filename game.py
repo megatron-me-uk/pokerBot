@@ -93,11 +93,15 @@ class nnActor(dumbActor):
             a=greedyact
         else:
             a=explore1
-        self.nn.evaluate(self.state.state)
-        if a==0:
-            self.nn.backprop([self.gamma*max(ac),None])
-        else:
-            self.nn.backprop([None,self.gamma*max(ac)])
+        #self.nn.evaluate(self.state.state)
+        try:
+            if a==0:
+                self.nn.backprop_previous([self.gamma*max(ac),None])
+            else:
+                self.nn.backprop_previous([None,self.gamma*max(ac)])
+        except Exception as e:
+            if self.nn.layers[0][0].output_previous!=None:
+                raise(e)
         self.state.state=s
         if a==0:
             self.state.action=0
@@ -108,13 +112,13 @@ class nnActor(dumbActor):
     def pay(self,amnt):
         super().pay(amnt)
         r=(amnt-self.state.inround)/10
-        self.nn.evaluate(self.state.state)
-        if self.state.action==0:
-            self.nn.backprop([r,None])
-        else:
-            self.nn.backprop([None,r])
         self.state.action=0
         self.state.state=[0,0]
+        ac=self.nn.evaluate(self.state.state)
+        if self.state.action==0:
+            self.nn.backprop_previous([r+self.gamma*ac[0],None])
+        else:
+            self.nn.backprop_previous([None,r+self.gamma*ac[0]])
     def __str__(self):
         return "nnActor"# with tc=%d" %(self.tc,)
 
