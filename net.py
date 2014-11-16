@@ -13,7 +13,6 @@ class neuron:
         self.in_neurons=children
         self.out_neurons=None
     def activation(self):
-        #self.output_derivative=self.output*(1-self.output)
         self.output_previous=self.output
         self.output=tanh(self.inputs())
         self.output_derivative_previous=self.output_derivative
@@ -207,13 +206,18 @@ def main():
 def main2():
     global a
     a=network(n_neurons=[1,80,20,20,20,2])
+    from copy import deepcopy
+    import time
+    b=deepcopy(a)
     import ladderWorld
     w=ladderWorld.ladder()
     max_state=max(w.states)
     mu_reward=0
     alpha=0.01
     gamma=0.95
-    for ep in range(100000):
+    start=time.time()
+    seed=random.getstate()
+    for ep in range(1000):
         ep_reward=0
         state=5#random.choice(w.states)
         i=0
@@ -257,6 +261,56 @@ def main2():
         mu_reward*=0.99
         mu_reward+=alpha*ep_reward
         print(mu_reward)
+    atime=time.time()-start
+    start=time.time()
+    random.setstate(seed)
+    for ep in range(1000):
+        ep_reward=0
+        state=5#random.choice(w.states)
+        i=0
+        while state is not None and i<100:
+            action=b.evaluate([state/max_state])
+            left=action[0]
+            right=action[1]
+            rr=random.random()
+            if rr<0.8:
+                if left>right:
+                    Q=action[0]
+                    action='l'
+                elif right>left:
+                    Q=action[1]
+                    action='r'
+                else:
+                    print(action)
+                    return b
+            else:
+                if left>right:
+                    Q=action[1]
+                    action='r'
+                else:
+                    Q=action[0]
+                    action='l'
+            (new_state,reward)=w.transition(state,action)
+            ep_reward+=reward
+            if new_state is None:
+                if action=='l':
+                    b.backprop([reward/10,None])
+                else:
+                    b.backprop([None,reward/10])
+            else:
+                vals=b.evaluate([new_state/max_state])
+                b.evaluate([state/max_state])
+                if action=='l':
+                    b.backprop([reward/10+gamma*max(vals),None])
+                else:
+                    b.backprop([None,reward/10+gamma*max(vals)])
+            state=new_state
+            i+=1
+        mu_reward*=0.99
+        mu_reward+=alpha*ep_reward
+        print(mu_reward)
+    btime=time.time()-start
+    print(atime,btime,a.eq(b))
     return a
 
 def mainGrid():
