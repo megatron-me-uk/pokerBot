@@ -128,73 +128,39 @@ class qActor(dumbActor):
     def __init__(self,balance=100,tc=3):
         super().__init__(balance)
         self.tc=tc
-        self.Q=[]
-        self.state.record=[]
+        actions=['check/fold','call']
         n=1
         for i in range(tc+2):
             n+=13**(i+1)
-        for i in range(2):
-            Qs=[]
-            rec=[]
-            [Qs.append(random.random()) for k in range(n)]
-            [rec.append(0) for k in range(n)]
-            self.Q.append(Qs)
-            self.state.record.append(rec)
-        self.epsilon=0.2
-        self.alpha=0.005
-        self.gamma=0.0
-        self.state.r=None
+        states=range(n)
+        import qLearner
+        self.qLearner=qLearner.qActor(states,actions)
+        self.qLearner.epsilon=0.2
+        self.qLearner.alpha=0.005
+        self.state.state=0
+        self.state.action='check/fold'
     def bet(self,maxbet):
         s=0
         mult=0
         for cc in self.state.cards+self.state.table[:self.tc]:
             s+=(1+cc.card)*(13**mult)
             mult+=1
-        #qraise=self.Q[2][s]
-        qcall=self.Q[1][s]
-        qfold=self.Q[0][s]
-        #if qraise>qcall and qraise>qfold:
-        #    greedyact=2
-        #    explore1=1
-        #    explore2=0
-        if qcall>qfold:
-            greedyact=1
-        #    explore1=2
-            explore2=0
-        else:
-            greedyact=0
-        #    explore1=2
-            explore2=1
-        rr=random.random()
-        if rr<(1-self.epsilon):
-            a=greedyact
-        #elif rr>(1-self.epsilon/2):
-        #    a=explore1
-        else:
-            a=explore2
-        if self.state.r is not None:
-            #if self.Q[a][s]==1337:
-            #    self.Q[a][s]=self.state.r
-            #else:
-            self.Q[self.state.action][self.state.state]+=self.alpha*(self.gamma*max([self.Q[0][s],self.Q[1][s]])-self.Q[self.state.action][self.state.state])
+        self.qLearner.update(self.state.state,self.state.action,0,s)
+        action=self.qLearner.select_action(s)
         self.state.state=s
-        if a==0:
-            self.state.action=0
+        self.state.action=action
+        if action=='check/fold':
             return 0
-        elif a==1:
-            self.state.action=1
+        elif action=='call':
             return maxbet-self.state.inround
-        #else:
-        #    self.state.action=2
-        #    return maxbet-self.state.inround+1
     def pay(self,amnt):
         super().pay(amnt)
-        self.state.record[self.state.action][self.state.state]+=amnt-self.state.inround
         r=amnt-self.state.inround
-        self.Q[self.state.action][self.state.state]+=self.alpha*(r+self.gamma*self.Q[0][0]-self.Q[self.state.action][self.state.state])
-        self.state.action=0
-        self.state.state=0
-        self.state.r=0
+        s=0
+        self.qLearner.update(self.state.state,self.state.action,r,s)
+        action='check/fold'
+        self.state.action=action
+        self.state.state=s
     def __str__(self):
         return "qActor with tc=%d" %(self.tc,)
 
