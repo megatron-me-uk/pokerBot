@@ -12,9 +12,7 @@ class grid:
         self.goal[(5,4)]=-10
         self.stepcost=-1
     def transition(self,state,action):
-        if state in self.goal:
-            return (None,self.goal[state])
-        elif action=='l':
+        if action=='l':
             newstate=(state[0]-1,state[1])
         elif action=='r':
             newstate=(state[0]+1,state[1])
@@ -24,7 +22,9 @@ class grid:
             newstate=(state[0],state[1]-1)
         else:
             print('oh dear',action)
-        if newstate in self.states:
+        if newstate in self.goal:
+            return (None,self.goal[newstate])
+        elif newstate in self.states:
             return (newstate,self.stepcost)
         else:
             return (state,self.stepcost)
