@@ -141,7 +141,7 @@ class qActor(dumbActor):
             self.Q.append(Qs)
             self.state.record.append(rec)
         self.epsilon=0.2
-        self.alpha=0.1
+        self.alpha=0.005
         self.gamma=0.0
         self.state.r=None
     def bet(self,maxbet):
