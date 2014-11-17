@@ -95,7 +95,7 @@ class nnActor(dumbActor):
             a=explore1
         #self.nn.evaluate(self.state.state)
         try:
-            if a==0:
+            if self.state.action==0:
                 self.nn.backprop_previous([self.gamma*max(ac),None])
             else:
                 self.nn.backprop_previous([None,self.gamma*max(ac)])
@@ -112,13 +112,15 @@ class nnActor(dumbActor):
     def pay(self,amnt):
         super().pay(amnt)
         r=(amnt-self.state.inround)/10
-        self.state.action=0
-        self.state.state=[0,0]
-        ac=self.nn.evaluate(self.state.state)
+        s=[0,0]
+        a=0
+        ac=self.nn.evaluate(s)
         if self.state.action==0:
-            self.nn.backprop_previous([r+self.gamma*ac[0],None])
+            self.nn.backprop_previous([r+self.gamma*ac[a],None])
         else:
-            self.nn.backprop_previous([None,r+self.gamma*ac[0]])
+            self.nn.backprop_previous([None,r+self.gamma*ac[a]])
+        self.state.state=s
+        self.state.action=a
     def __str__(self):
         return "nnActor"# with tc=%d" %(self.tc,)
 
