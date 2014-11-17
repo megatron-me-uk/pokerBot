@@ -66,6 +66,7 @@ class network:
     def __init__(self,n_neurons=[2,80,20,20,20,2],alpha=0.005):
         self.alpha=alpha
         self.momentum=0.45
+        self.reg=0.0001
         self.shape=n_neurons+[]
         self.input_layer=[input_neuron() for i in range(n_neurons[0])]
         input_layer=self.input_layer
@@ -116,6 +117,7 @@ class network:
             out_layer=0
         for k,v in self.weights.items():
             change=self.alpha*k[0].delta*k[1].output+self.momentum*self.lastchange[k]
+            self.weights[k]*=(1-self.alpha*self.reg)
             self.weights[k]-=change
             self.lastchange[k]=change
     def backprop_previous(self,train_vals):
@@ -133,6 +135,7 @@ class network:
             out_layer=0
         for k,v in self.weights.items():
             change=self.alpha*k[0].delta*k[1].output_previous+self.momentum*self.lastchange[k]
+            self.weights[k]*=(1-self.alpha*self.reg)
             self.weights[k]-=change
             self.lastchange[k]=change
     def backprop_numerical(self,train_vals):
